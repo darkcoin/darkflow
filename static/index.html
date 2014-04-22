@@ -6,58 +6,7 @@
 <script src="/socket.io/socket.io.js"></script>
 <script src="jquery-1.11.0.min.js"></script>
 <script src="transactions.js"></script>
-<style>
-body {
-font-family:'Open Sans Light', sans-serif;
-background-color:#eeffee;
-background-image:url('background.jpg');
-margin:0;
-padding:0;
-}
-#graph {
-left:0;
-top:0;
-position:absolute;
-z-index:9;
-}
-#incoming {
-position:absolute;
-top:0;
-left:0;
-padding-left:20px;
-font-size:28px;
-color:#000;
-font-family:'Open Sans Light', sans-serif;
-z-index:10;
-}
-#menu span {
-padding-left:20px;
-}
-#menu {
-position:absolute;
-padding:14px 18px;
-right:0;
-top:0;
-z-index:11;
-text-align:right;
-}
-#sound {
-cursor:pointer;
-}
-#pause {
-cursor:pointer;
-}
-#title {
-background-image:url('bitcoin_logo.png');
-background-repeat:no-repeat;
-background-position:15px 10px;
-position:absolute;
-padding:14px 54px;
-left:0;
-top:0;
-z-index:12;
-}
-</style>
+<link rel="stylesheet" href="style.css" type="text/css" charset="utf-8" />
 </head>
 <body>
 <div id="title" >Bitcoin Live Transactions</div>
@@ -65,7 +14,7 @@ z-index:12;
 <span id="sound">Sound is Off</span>
 <span id="pause">Pause</span>
 </div>
-<div id="incoming"></div>  
-<canvas id="graph" width="150" height="150"></canvas>
+<div id="incoming"></div>
+<canvas id="graph" width="150" height="150" title="Click to Pause"></canvas>
 </body>
 </html>

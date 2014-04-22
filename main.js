@@ -1,10 +1,10 @@
 var fs = require('fs');
 var fileserver = require('node-static');
 var file = new fileserver.Server('./static/');
+var known_tx_hashes = {};
 
 // html index
 var handle_index = function(request, response) {
-
     file.serve(request, response, function (err, res) {
         if (err) { // An error as occured
             console.error("> Error serving " + request.url + " - " + err.message);
@@ -14,8 +14,8 @@ var handle_index = function(request, response) {
             console.log("> " + request.url + " - " + res.message);
         }
     });
-
 }
+
 // load server
 var app = require('http').createServer(handle_index)
 var io = require('socket.io').listen(app)
@@ -54,7 +54,7 @@ var handle_block = function(info) {
 };
 
 var handle_tx = function(info) {
-    
+
 //    var tx = info.message.tx.getStandardizedObject();
 
     var tx = info.message.tx;
@@ -101,9 +101,17 @@ var handle_tx = function(info) {
 
     var hash = util.formatHashFull(tx.getHash());
 
-	for ( var i = 0; i < websockets.length; i++ ) {
-		websockets[i].emit('tx', { hash: hash, outputs: outputs });
-	}
+    if ( known_tx_hashes[hash] == undefined ) {
+
+        //todo: flush very old hashes
+
+        known_tx_hashes[hash] = true;
+
+    	for ( var i = 0; i < websockets.length; i++ ) {
+    		websockets[i].emit('tx', { hash: hash, outputs: outputs });
+    	}
+
+    }
 
 };
 

@@ -1,0 +1,122 @@
+body {
+    overflow:hidden;
+    font-family:'Open Sans Light', sans-serif;
+    background-color:#eeffee;
+    background-image:url('background.jpg');
+    margin:0;
+    padding:0;
+}
+.transaction-output-header { 
+    font-weight:normal;
+    margin:0;
+    padding:0;
+    font-size:14px;
+}
+.transaction-id-wrapper { 
+    margin-top:20px;
+}
+#transaction-outputs-inner-wrapper { 
+    position:relative;
+    overflow:hidden;
+}
+.transaction-outputs-wrapper { 
+    margin-top:20px;
+}
+.transaction-header { 
+    font-weight:normal;
+    margin:0;
+    padding:0;
+    font-size:32px;
+}
+.transaction-id a { 
+    font-size:10px;
+}
+.transaction-id { 
+    margin-top:10px;
+}
+.transaction a:hover { 
+    color:#ff8600;
+}
+.transaction a { 
+    text-decoration:none;
+    color:#000;
+    transition-timing-function: ease;
+    transition-duration: 0.5s;
+    transition-property: color;
+}
+.output div { 
+    font-size:10px;
+}
+.output { 
+    margin-bottom:10px;
+}
+#graph {
+    left:0;
+    top:0;
+    position:absolute;
+    z-index:9;
+}
+#watchaddress {
+    font-family:'Open Sans Light';
+    font-size:13px;
+    background:transparent;
+    border:0;
+}
+#watch { 
+    font-size:13px;
+    z-index:12;
+    padding:12px;
+    padding-left:20px;
+    position:absolute;
+    left:0;
+    bottom:0;
+}
+#incoming {
+    position:absolute;
+    top:0;
+    left:0;
+    padding-left:20px;
+    font-size:28px;
+    color:#000;
+    font-family:'Open Sans Light', sans-serif;
+    z-index:10;
+}
+#menu span {
+    padding-left:20px;
+}
+#menu {
+    position:absolute;
+    padding:14px 18px;
+    right:0;
+    top:0;
+    z-index:11;
+    text-align:right;
+}
+#sound:hover { 
+    color:#ff8600
+}
+#sound {
+    transition-timing-function: ease;
+    transition-duration: 0.5s;
+    transition-property: color;    
+    cursor:pointer;
+}
+#pause:hover { 
+    color:#ff8600
+}
+#pause {
+    transition-timing-function: ease;
+    transition-duration: 0.5s;
+    transition-property: color;
+    cursor:pointer;
+}
+#title {
+    background-image:url('bitcoin_logo.png');
+    background-repeat:no-repeat;
+    background-position:15px 10px;
+    position:absolute;
+    padding:14px 54px;
+    left:0;
+    top:0;
+    z-index:12;
+}
