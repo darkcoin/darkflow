@@ -1,9 +1,13 @@
 jQuery(document).ready(function($) {
 
+    //todo: use window focus and blur to pause all activity?
+
     var pause = false, transactions_paused = null;
 
-    $('#pause').click(function(){
-        var t = $(this);
+    var handle_pause = function(t){
+        hovered_widths_index = false;
+        selected_widths_index = false;
+        var t = $('#pause');
         if ( t.hasClass('on') ){
             t.removeClass('on');
             t.text('Pause');
@@ -16,8 +20,11 @@ jQuery(document).ready(function($) {
 
             transactions_paused = JSON.parse(JSON.stringify(transactions));
         }
-    });
+    }
 
+    $('#pause').click(function(){
+        handle_pause(this);
+    });
 
     var audio = false, osc = false;
 
@@ -59,8 +66,55 @@ jQuery(document).ready(function($) {
 
     $('body').css('overflow', 'hidden');
 
+    var widths = null;
+    var hovered_widths_index = false;
+    var selected_widths_index = false;
+
+    $('#graph').click(function(e){
+        if ( pause && hovered_widths_index ) {
+
+            selected_widths_index = hovered_widths_index;
+
+            var tx = transactions_paused[hovered_widths_index]
+
+            var output_html = '<div>';
+            var il = tx['outputs'].length;
+            output_html += '<div>TX:<a target="insight" href="http://live.insight.is/tx/'+tx['hash']+'">'+tx['hash']+'</a></div>';
+            for ( var i=0; i<il; i++){
+                var value = tx['outputs'][i]['value'];
+                var addresses = tx['outputs'][i]['addresses'];
+                output_html += '<div> &#10141; '+value+addresses[0]+'</div>';
+            }
+            output_html += '</div>';
+
+            var incoming = $('#incoming');        
+            incoming.html( output_html );
+            incoming.css('left', $(window).width() /2 )
+            incoming.css('top', $(window).height() /2 - incoming.height()/2)            
+
+            render( transactions_paused );
+        } else {
+            handle_pause();
+        }
+    })
+
     $('#graph').mousemove(function(e){
-        console.log(e.y);
+
+        if ( pause ) {
+
+            var x = e.pageX, y = e.pageY;
+            for ( var ii= 0, ll=widths.length-1; ii<ll; i++ ) {
+                //todo: select last element                    
+                if ( x > widths[ii]['x'] && x < widths[ii+1]['x'] ) {
+                    hovered_widths_index = ii;
+                    break;
+                }
+                ii++;
+            }
+
+            render( transactions_paused );
+        }
+
     })
 
     var render = function( data ){
@@ -71,7 +125,7 @@ jQuery(document).ready(function($) {
         var start_width = 0.0000004;
         var start_scale = 0.000001;
 
-        var widths = [{x:0,w:start_width,s:start_scale}];
+        widths = [{x:0,w:start_width,s:start_scale}];
 
         for ( var i=1; i<max_transactions; i++ ){
             var w = widths[i-1]['w'] * scale_ratio;
@@ -119,8 +173,14 @@ jQuery(document).ready(function($) {
                         var frequency = height/(max_height*0.5) * 1000 + 10;
                         osc.frequency.value = frequency;
                     }
-
-                    ctx.fillStyle = 'rgba(255, 134, 0, 1)';
+    
+                    if ( pause && hovered_widths_index == c ) {
+                        ctx.fillStyle = 'rgba(0, 121, 255, 1)';
+                    } else if ( pause && selected_widths_index == c ) {
+                        ctx.fillStyle = 'rgba(0, 0, 0, 1)';
+                    } else {
+                        ctx.fillStyle = 'rgba(255, 134, 0, 1)';
+                    }
         
                     var jl = data[k]['outputs'].length;
                     var bar_height, percentage, value;
@@ -152,8 +212,6 @@ jQuery(document).ready(function($) {
 
         if ( !pause ) {
             render( transactions );
-        } else {
-            render( transactions_paused );
         }
 
         if ( !pause ) {
@@ -171,15 +229,8 @@ jQuery(document).ready(function($) {
             incoming.css('left', $(window).width() /2 )
             incoming.css('top', $(window).height() /2 - incoming.height()/2)
 
-            if ( incoming.height() > $(window).height() ) {
-                // scale
-            }
-        
         }
-
-
     });
-
 });
 
 
