@@ -10,7 +10,7 @@ var socket = require('socket.io');
 var networks = bitcore.networks;
 var Peer = bitcore.Peer;
 
-var BitflowApplication = function(config) {
+exports.BitflowServer = function(config) {
 
     // init variables
 
@@ -118,7 +118,7 @@ var BitflowApplication = function(config) {
 
     // initialize
 
-    server = new fileserver.Server(  __dirname + '/static/' );
+    server = new fileserver.Server(  __dirname + '/bitflowui/' );
     app = http.createServer(handle_index)
     io = socket.listen(app)
     app.listen( config['port'] );
@@ -149,9 +149,3 @@ var BitflowApplication = function(config) {
     peermanager.start();
 
 }
-
-// start the application
-var bitflow = new BitflowApplication({
-    port : 1337, // port for the web server
-    network : 'livenet', // livenet or testnet
-})

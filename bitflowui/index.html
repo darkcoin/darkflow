@@ -5,16 +5,16 @@
 <title>Bitcoin Live Transactions</title>
 <script src="/socket.io/socket.io.js"></script>
 <script src="jquery-1.11.0.min.js"></script>
-<script src="transactions.js"></script>
+<script src="bitflowui.js"></script>
 <link rel="stylesheet" href="style.css" type="text/css" charset="utf-8" />
+<script>
+jQuery(document).ready(function($) {
+    var bitflow = new BitflowUI({
+        'socket' : 'http://127.0.0.1:1337',
+    });
+});
+</script>
 </head>
 <body>
-<div id="title" >Bitcoin Live Transactions</div>
-<div id="menu">
-<span id="sound">Sound is Off</span>
-<span id="pause">Pause</span>
-</div>
-<div id="incoming"></div>
-<canvas id="graph" width="150" height="150" title="Click to Pause"></canvas>
 </body>
 </html>

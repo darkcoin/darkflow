@@ -1,9 +1,133 @@
-jQuery(document).ready(function($) {
+var BitflowUI = function(config){
 
-    //todo: use window focus and blur to pause all activity?
+    // init variables 
 
+    var socket;
     var max_transactions;
     var transactions = [];
+    var pause = false;
+    var transactions_paused = null;
+    var audio = false;
+    var osc = false;
+    var max_height = 10;
+    var max_height_divisor = 10;
+    var widths = null;
+    var hovered_widths_index = false;
+    var selected_widths_index = false;
+
+
+    // initialize socket        
+
+    socket = io.connect( config['socket'] );
+
+    socket.on('tx', function (data) {
+
+        transactions.push(data);
+
+        if ( !pause ) {
+            render( transactions );
+            handle_transaction( data );
+        }
+
+    });
+
+
+    // initialize html 
+
+    var title = $('<div id="title" >Bitcoin Live Transactions</div>');         
+
+    var sound_button = $('<span id="sound"></span>');
+    var pause_button = $('<span id="pause">Pause</span>');
+        
+    var menu = $('<div id="menu"></div>');
+    menu.append(sound_button).append(pause_button);
+        
+    var canvas = $('<canvas id="graph" width="150" height="150" title="Click to Pause"></canvas>');
+    var incoming = $('<div id="incoming"></div>');
+        
+    $('body').append(title)
+            .append(menu)
+            .append(incoming)
+            .append(canvas);
+        
+        
+    // initialize actions 
+        
+    pause_button.click(function(){
+        handle_pause(this);
+    });
+
+    sound_button.click(function(){
+        var t = $(this);
+        if ( t.hasClass('on') ){
+            t.removeClass('on');
+            t.text('Sound is Off');
+            osc.stop(0);
+            audio = false, osc = false;
+
+        } else {
+
+            t.addClass('on');
+            t.text('Sound is On');
+
+            if ( window.webkitAudioContext ) {
+                audio = new window.webkitAudioContext();
+            } else if ( window.mozAudioContext ) {
+                audio = new window.mozAudioContext();
+            } else if ( window.AudioContext ) {
+                audio = new window.AudioContext();
+            } 
+        
+            osc = audio.createOscillator();
+            osc.connect(audio.destination);
+            osc.start(0);        
+        
+        }
+    });
+
+    canvas.click(function(e){
+
+        if ( pause && hovered_widths_index ) {
+            selected_widths_index = hovered_widths_index;
+            var tx = transactions_paused[hovered_widths_index]
+
+            // display info
+            handle_transaction( tx );
+
+            // render graph
+            render( transactions_paused );
+
+        } else {
+            handle_pause();
+        }
+    })
+
+    canvas.mousemove(function(e){
+
+        var t = $(this);
+
+        if ( pause ) {
+
+            var x = e.pageX, y = e.pageY;
+            for ( var ii= 0, ll=widths.length-1; ii<ll; i++ ) {
+                //todo: select last element                    
+                if ( x > widths[ii]['x'] && x < widths[ii+1]['x'] ) {
+                    t.css('cursor', 'pointer').attr('title', '');
+                    hovered_widths_index = ii;
+                    break;
+                } else {
+                    t.css('cursor', 'default');
+                }
+                ii++;
+            }
+
+            render( transactions_paused );
+        }
+
+    })        
+        
+
+    // initialize functions
     
     var calculate_max_transactions = function(){
         max_transactions = Math.round($(window).width()/2);
@@ -49,8 +173,6 @@ jQuery(document).ready(function($) {
 
     }
 
-    var pause = false, transactions_paused = null;
-
     var handle_pause = function(t){
         hovered_widths_index = false;
         selected_widths_index = false;
@@ -69,97 +191,8 @@ jQuery(document).ready(function($) {
         }
     }
 
-    $('#pause').click(function(){
-        handle_pause(this);
-    });
-
-    var audio = false, osc = false;
-
-    $('#sound').click(function(){
-        var t = $(this);
-        if ( t.hasClass('on') ){
-            t.removeClass('on');
-            t.text('Sound is Off');
-            osc.stop(0);
-            audio = false, osc = false;
-
-        } else {
-
-            t.addClass('on');
-            t.text('Sound is On');
-
-            if ( window.webkitAudioContext ) {
-                audio = new window.webkitAudioContext();
-            } else if ( window.mozAudioContext ) {
-                audio = new window.mozAudioContext();
-            } else if ( window.AudioContext ) {
-                audio = new window.AudioContext();
-            } 
-        
-            osc = audio.createOscillator();
-            osc.connect(audio.destination);
-            osc.start(0);        
-        
-        }
-    });
-
-    //xxx
-    for ( var i=0; i<max_transactions; i++ ){
-        transactions.push(false);
-    }
-
-    var max_height = 10;
-    var max_height_divisor = 10;
-
-    var widths = null;
-    var hovered_widths_index = false;
-    var selected_widths_index = false;
-
-    $('#graph').click(function(e){
-        if ( pause && hovered_widths_index ) {
-
-            selected_widths_index = hovered_widths_index;
-
-            var tx = transactions_paused[hovered_widths_index]
-
-            // display info
-            handle_transaction( tx );
-
-            // render graph
-            render( transactions_paused );
-
-        } else {
-            handle_pause();
-        }
-    })
-
-    $('#graph').mousemove(function(e){
-
-        var t = $(this);
-
-        if ( pause ) {
-
-            var x = e.pageX, y = e.pageY;
-            for ( var ii= 0, ll=widths.length-1; ii<ll; i++ ) {
-                //todo: select last element                    
-                if ( x > widths[ii]['x'] && x < widths[ii+1]['x'] ) {
-                    t.css('cursor', 'pointer').attr('title', '');
-                    hovered_widths_index = ii;
-                    break;
-                } else {
-                    t.css('cursor', 'default');
-                }
-                ii++;
-            }
-
-            render( transactions_paused );
-        }
-
-    })
-
     var render = function( data ){
 
-        // determine the number of transactions to render
         calculate_max_transactions();
 
         var end_width = 17;
@@ -242,26 +275,5 @@ jQuery(document).ready(function($) {
         
         }
     }
-
-    var socket = io.connect('http://127.0.0.1:1337');
-
-    socket.on('tx', function (data) {
-
-        while ( transactions.length > max_transactions - 1 ) {
-            transactions.shift()
-        }
-
-        transactions.push(data);
-
-        if ( !pause ) {
-            render( transactions );
-        }
-
-        if ( !pause ) {
-            handle_transaction( data );
-        }
-    });
-});
-
-
+}
 
