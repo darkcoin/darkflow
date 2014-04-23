@@ -6,13 +6,41 @@ var BitflowUI = function(config){
         transactions = [],//transaction data from socket
         transactions_paused = null,//clone of transactions to be used when paused
         paused = false, //boolean if transactions paused
-        audio = false, //audio context
-        osc = false, //oscillator
         widths = null, //calculated x position and width for each bar in to be graphed
         window_width, 
         window_height,
         hovered_widths_index = false, //currently hovered bar in graph
         selected_widths_index = false; //currently selected bar in graph
+
+    var Synth = function(){}
+    Synth.prototype = {
+        audio : false,
+        osc : false,
+        stop : function(){
+            this.osc.stop(0);
+            this.audio = false, this.osc = false;
+        },
+        start : function(){
+            if ( window.webkitAudioContext ) {
+                this.audio = new window.webkitAudioContext();
+            } else if ( window.mozAudioContext ) {
+                this.audio = new window.mozAudioContext();
+            } else if ( window.AudioContext ) {
+                this.audio = new window.AudioContext();
+            } 
+            this.osc = this.audio.createOscillator();
+            this.osc.connect(this.audio.destination);
+            this.osc.start(0);
+        },
+        change : function(frequency){
+            if ( this.osc ) {
+                this.osc.type = "square";
+                this.osc.frequency.value = frequency;
+            }
+        }
+    }
+    var synth = new Synth();
+
     var handle_transaction = function(tx){
         transactions.push( tx );
         while ( transactions.length > transactions_length ) {
@@ -101,20 +129,10 @@ var BitflowUI = function(config){
         var t = $(this);
         if ( t.hasClass('on') ){
             t.removeClass('on').text('Sound is Off');
-            osc.stop(0);
-            audio = false, osc = false;
+            synth.stop();
         } else {
             t.addClass('on').text('Sound is On');
-            if ( window.webkitAudioContext ) {
-                audio = new window.webkitAudioContext();
-            } else if ( window.mozAudioContext ) {
-                audio = new window.mozAudioContext();
-            } else if ( window.AudioContext ) {
-                audio = new window.AudioContext();
-            } 
-            osc = audio.createOscillator();
-            osc.connect(audio.destination);
-            osc.start(0);        
+            synth.start();
         }
     });
     canvas.mousemove(function(e){
@@ -154,6 +172,8 @@ var BitflowUI = function(config){
             for (var k=0,txs_length=txs.length; k<txs_length; k++){
                 var total = 0;
                 if ( txs[k] ) {
+
+                    // calculate values
                     for ( var j=0,jl=txs[k]['outputs'].length; j<jl; j++){
                         var value = txs[k]['outputs'][j]['value'];
                         total += parseFloat(value);
@@ -163,11 +183,10 @@ var BitflowUI = function(config){
                         height = Math.round(total*widths[k]['s']),
                         y = (window_height/2)-(height/2);
 
-                    if ( audio && osc ) {
-                        osc.type = "square";
-                        var frequency = total * 1000 + 10;
-                        osc.frequency.value = frequency;
-                    }
+                    // change audio    
+                    synth.change( total * 1000 + 10 );
+
+                    // draw graph                        
                     if ( paused && hovered_widths_index == k ) {
                         ctx.fillStyle = 'rgba(0, 121, 255, 1)';
                     } else if ( paused && selected_widths_index == k ) {
