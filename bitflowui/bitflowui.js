@@ -1,4 +1,5 @@
 var BitflowUI = function(config){
+
     // init variables 
     var socket,
         transactions_length, //calculated length of transactions to render
@@ -21,9 +22,11 @@ var BitflowUI = function(config){
             render( transactions, tx, canvas[0] );
         }
     }
+
     // initialize socket        
     socket = io.connect( config['socket'] );
     socket.on('tx', handle_transaction );
+
     // initialize html 
     var title = $('<div id="title" >Bitcoin Live Transactions</div>');         
     var sound_button = $('<span id="sound">Sound is Off</span>');
@@ -59,11 +62,13 @@ var BitflowUI = function(config){
             widths.push( { x: widths[i-1]['x']+w, w: w, s: s} );
         }
     }
+
     // only calculate when resized
     calculate_transactions_length();
     $(window).resize(function(){
         calculate_transactions_length();
     });
+
     // initialize ui actions 
     var handle_pause = function(t){
         hovered_widths_index = false;
@@ -82,6 +87,16 @@ var BitflowUI = function(config){
     pause_button.click(function(){
         handle_pause(this);
     });
+    canvas.click(function(e){
+        if ( paused && hovered_widths_index ) {
+            selected_widths_index = hovered_widths_index;
+            var tx = transactions_paused[hovered_widths_index]
+            // render graph
+            render( transactions_paused, tx, canvas[0] );
+        } else {
+            handle_pause();
+        }
+    })
     sound_button.click(function(){
         var t = $(this);
         if ( t.hasClass('on') ){
@@ -102,16 +117,6 @@ var BitflowUI = function(config){
             osc.start(0);        
         }
     });
-    canvas.click(function(e){
-        if ( paused && hovered_widths_index ) {
-            selected_widths_index = hovered_widths_index;
-            var tx = transactions_paused[hovered_widths_index]
-            // render graph
-            render( transactions_paused, tx, canvas[0] );
-        } else {
-            handle_pause();
-        }
-    })
     canvas.mousemove(function(e){
         if ( paused ) {
             var t = $(this), x = e.pageX, y = e.pageY;
@@ -120,6 +125,8 @@ var BitflowUI = function(config){
                 if ( x > widths[ii]['x'] && x < widths[ii+1]['x'] ) {
                     t.css('cursor', 'pointer').attr('title', '');
                     hovered_widths_index = ii;
+                    // render graph
+                    render( transactions_paused, false, canvas[0] );
                     break;
                 } else {
                     t.css('cursor', 'default');
@@ -130,43 +137,16 @@ var BitflowUI = function(config){
             if ( x > widths[li]['x'] && x < widths[li]['x'] + widths[li]['w']) {
                 t.css('cursor', 'pointer').attr('title', '');
                 hovered_widths_index = widths.length-1;
+                // render graph
+                render( transactions_paused, false, canvas[0] );
             } 
-            // render graph
-            render( transactions_paused, false, canvas[0] );
         }
     })        
-    // initialize functions
-    var render_transaction_info = function(tx){
-        var html = '<div>';
-        var outs_length = tx['outputs'].length;
-        html += '<div class="transaction">';
-        html += '<div class="transaction-id-wrapper"><h3 class="transaction-output-header">Transaction ID</h3>';
-        html += '<div class="transaction-id"><a target="insight" href="http://live.insight.is/tx/'+tx['hash']+'">'+tx['hash']+'</a></div></div>';
-        html += '<div class="transaction-outputs-wrapper"><h3 class="transaction-output-header">Outputs ('+outs_length+')</h3><div id="transaction-outputs-inner-wrapper">';
-        for ( var i=0; i<outs_length; i++){
-            var value = tx['outputs'][i]['value'];
-            var addresses = tx['outputs'][i]['addresses'];
-            html += '<div class="output"> &#10141; '+value;
-            for ( var ai=0,al=addresses.length; ai<al;ai++){
-                html += '<div><a target="insight" href="http://live.insight.is/address/'+addresses[0]+'">'+addresses[ai]+'</a></div>';
-            }
-            html += '</div>';
-            if ( i > 4 ) {
-                html += '<div id="view-more-seperator"><a target="insight" href="http://live.insight.is/tx/'+tx['hash']+'">+ More</a></div>';
-                break;
-            }
-        }
-        html += '</div></div></div>';
-        $('#incoming')
-            .html( html )
-            .css('left', window_width / 2 )
-            .css('top', window_height / 2 - incoming.height() / 2) 
 
-    }
+    // define function to render the graph
+
     var render = function( txs, tx, canvas ){
-        if ( tx ) {
-            render_transaction_info( tx );
-        }
+
         canvas.width = window_width;
         canvas.height = window_height;
         if ( canvas.getContext ){
@@ -203,6 +183,35 @@ var BitflowUI = function(config){
                     }
                 }
             }
+        }
+
+        if ( tx ) {
+
+            var html = '<div>';
+            var outs_length = tx['outputs'].length;
+            html += '<div class="transaction">';
+            html += '<div class="transaction-id-wrapper"><h3 class="transaction-output-header">Transaction ID</h3>';
+            html += '<div class="transaction-id"><a target="insight" href="http://live.insight.is/tx/'+tx['hash']+'">'+tx['hash']+'</a></div></div>';
+            html += '<div class="transaction-outputs-wrapper"><h3 class="transaction-output-header">Outputs ('+outs_length+')</h3><div id="transaction-outputs-inner-wrapper">';
+            for ( var i=0; i<outs_length; i++){
+                var value = tx['outputs'][i]['value'];
+                var addresses = tx['outputs'][i]['addresses'];
+                html += '<div class="output"> &#10141; '+value;
+                for ( var ai=0,al=addresses.length; ai<al;ai++){
+                    html += '<div><a target="insight" href="http://live.insight.is/address/'+addresses[0]+'">'+addresses[ai]+'</a></div>';
+                }
+                html += '</div>';
+                if ( i > 4 ) {
+                    html += '<div id="view-more-seperator"><a target="insight" href="http://live.insight.is/tx/'+tx['hash']+'">+ More</a></div>';
+                    break;
+                }
+            }
+            html += '</div></div></div>';
+            $('#incoming')
+                .html( html )
+                .css('left', window_width / 2 )
+                .css('top', window_height / 2 - incoming.height() / 2) 
+
         }
     }
 }
