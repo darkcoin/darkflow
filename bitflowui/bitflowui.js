@@ -15,6 +15,9 @@ var BitflowUI = function(config){
 
     var handle_transaction = function(tx){
         transactions.push( tx );
+        while ( transactions.length > transactions_length ) {
+            transactions.shift()
+        }
         if ( !paused ) {
             render( transactions, tx );
         }
@@ -37,11 +40,48 @@ var BitflowUI = function(config){
     var canvas = $('<canvas id="graph" width="150" height="150" title="Click to Pause"></canvas>');
     var incoming = $('<div id="incoming"></div>');
         
-    $('body').append(title)
-            .append(menu)
-            .append(incoming)
-            .append(canvas);
-        
+    $('body')
+        .append(title)
+        .append(menu)
+        .append(incoming)
+        .append(canvas);
+
+    // calculate the widths for each bar
+
+    var calculate_transactions_length = function(){
+    
+        transactions_length = Math.round($(window).width()/2);
+        if ( transactions.length < transactions_length ) {
+            while ( transactions.length < transactions_length ) {
+                transactions.splice(0, 0, false);
+            }
+        } else if ( transactions.length > transactions_length ) {
+            while ( transactions.length > transactions_length ) {
+                transactions.shift()
+            }
+        }
+
+        var end_width = 17;
+        var start_width = 0.0000004;
+        var start_scale = 0.000001;
+        var scale_ratio = Math.pow( end_width / start_width , 1 / transactions_length );
+
+        widths = [{x:0,w:start_width,s:start_scale}];
+
+        for ( var i=1; i<transactions_length; i++ ){
+            var w = widths[i-1]['w'] * scale_ratio;
+            var s = widths[i-1]['s'] * scale_ratio;
+            widths.push( { x: widths[i-1]['x']+w, w: w, s: s} );
+        }
+
+
+    }
+
+    calculate_transactions_length();
+
+    $(window).resize(function(){
+        calculate_transactions_length();
+    });
         
     // initialize actions 
 
@@ -149,19 +189,6 @@ var BitflowUI = function(config){
 
     // initialize functions
     
-    var calculate_transactions_length = function(){
-        transactions_length = Math.round($(window).width()/2);
-        if ( transactions.length < transactions_length ) {
-            while ( transactions.length < transactions_length ) {
-                transactions.splice(0, 0, false);
-            }
-        } else if ( transactions.length > transactions_length ) {
-            while ( transactions.length > transactions_length ) {
-                transactions.shift()
-            }
-        }
-    }
-
     var render_transaction_info = function(tx){
 
         var output_html = '<div>';
@@ -195,23 +222,8 @@ var BitflowUI = function(config){
 
     var render = function( txs, tx ){
 
-        calculate_transactions_length();
-
         if ( tx ) {
             render_transaction_info( tx );
-        }
-
-        var end_width = 17;
-        var start_width = 0.0000004;
-        var start_scale = 0.000001;
-        var scale_ratio = Math.pow( end_width / start_width , 1 / transactions_length );
-
-        widths = [{x:0,w:start_width,s:start_scale}];
-
-        for ( var i=1; i<transactions_length; i++ ){
-            var w = widths[i-1]['w'] * scale_ratio;
-            var s = widths[i-1]['s'] * scale_ratio;
-            widths.push( { x: widths[i-1]['x']+w, w: w, s: s} );
         }
 
         var canvas = document.getElementById('graph');
@@ -221,7 +233,6 @@ var BitflowUI = function(config){
         if ( canvas.getContext ){
             var ctx = canvas.getContext('2d');
 
-            var c = 0;
             var il = txs.length;
             for (var k=0; k<il; k++){
                 var total = 0;
@@ -232,11 +243,11 @@ var BitflowUI = function(config){
                         total += parseFloat(value);
                     }
 
-                    var x = widths[c]['x'];
+                    var x = widths[k]['x'];
     
-                    var width = widths[c]['w'];
+                    var width = widths[k]['w'];
 
-                    var height = Math.round(total*widths[c]['s']);
+                    var height = Math.round(total*widths[k]['s']);
 
                     var y = ($(window).height()/2)-(height/2);
 
@@ -265,7 +276,6 @@ var BitflowUI = function(config){
                     y = null;
     
                 }
-                c++;
             }
         
         }

@@ -127,7 +127,7 @@ exports.BitflowServer = function(config) {
 
     server = new fileserver.Server(  __dirname + '/bitflowui/' );
     app = http.createServer(handle_index)
-    io = socket.listen(app)
+    io = socket.listen(app, {log: config['debug']} )
     app.listen( config['port'] );
 
     if ( config['network'] == 'livenet' ) {
