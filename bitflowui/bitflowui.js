@@ -12,12 +12,54 @@ var BitflowUI = function(config){
         hovered_widths_index = false, //currently hovered bar in graph
         selected_widths_index = false; //currently selected bar in graph
 
+    // initialize socket
+    var handle_transaction = function(tx){
+        transactions.push( tx );
+        while ( transactions.length > transactions_length ) {
+            transactions.shift()
+        }
+        if ( !paused ) {
+            render( transactions, tx, canvas[0] );
+        }
+    }
+    socket = io.connect( config['socket'] );
+    socket.on('tx', handle_transaction );
+
+    // determine graph bar positions and widths
+    var calculate_transactions_length = function(){
+        window_width = $(window).width();
+        window_height = $(window).height();
+        transactions_length = Math.round(window_width/2);
+        while ( transactions.length < transactions_length ) {
+            transactions.splice(0, 0, false);
+        }
+        while ( transactions.length > transactions_length ) {
+            transactions.shift()
+        }
+        // calculate the x position and width for each bar
+        var end_width = 17;
+        var start_width = 0.0000004;
+        var start_scale = 0.000001;
+        var scale_ratio = Math.pow( end_width / start_width , 1 / transactions_length );
+        widths = [{x:0,w:start_width,s:start_scale}];
+        for ( var i=1; i<transactions_length; i++ ){
+            var w = widths[i-1]['w'] * scale_ratio;
+            var s = widths[i-1]['s'] * scale_ratio;
+            widths.push( { x: widths[i-1]['x']+w, w: w, s: s} );
+        }
+    };
+    calculate_transactions_length();
+    $(window).bind('resize', calculate_transactions_length );
+
+    // init synthesizer
     var Synth = function(){}
     Synth.prototype = {
         audio : false,
         osc : false,
         stop : function(){
-            this.osc.stop(0);
+            if ( this.osc ) {
+                this.osc.stop(0);
+            }
             this.audio = false, this.osc = false;
         },
         start : function(){
@@ -41,100 +83,88 @@ var BitflowUI = function(config){
     }
     var synth = new Synth();
 
-    var handle_transaction = function(tx){
-        transactions.push( tx );
-        while ( transactions.length > transactions_length ) {
-            transactions.shift()
+    var Button = function(options){
+        this.elm = $('<span id="'+options['id']+'"></span>');
+        this.elm.attr('data-options', JSON.stringify(options));
+        var change_state = function( state, elm ){
+            var options = JSON.parse(elm.attr('data-options'));
+            if ( state == 'on' ){
+                elm.addClass('on');
+                elm.text( options['on_text'] );
+                eval(options['on_callback'])();
+            } else {
+                elm.removeClass('on');
+                elm.text( options['off_text'] );
+                eval(options['off_callback'])();
+            }
         }
-        if ( !paused ) {
-            render( transactions, tx, canvas[0] );
+        var handle_click = function(){
+            var t = $(this)
+            if ( t.hasClass( 'on' ) ) {
+                change_state( 'off', t );
+            } else {
+                change_state( 'on', t );
+            }
         }
+        this.elm.bind('click', handle_click );
+        change_state( options['state'], this.elm );
     }
-
-    // initialize socket        
-    socket = io.connect( config['socket'] );
-    socket.on('tx', handle_transaction );
 
     // initialize html 
     var title = $('<div id="title" >Bitcoin Live Transactions</div>');         
-    var sound_button = $('<span id="sound">Sound is Off</span>');
-    var pause_button = $('<span id="pause">Pause</span>');
-    var menu = $('<div id="menu"></div>');
-    menu.append(sound_button).append(pause_button);
-    var canvas = $('<canvas id="graph" width="150" height="150" title="Click to Pause"></canvas>');
+
+    var sound_button = new Button({
+        id : 'sound',
+        on_text : 'Sound is On',
+        on_callback : 'synth.start',
+        off_text : 'Sound is Off',
+        off_callback : 'synth.stop',
+        state : 'off'
+    });
+
+    var handle_pause = function(){
+        hovered_widths_index = false;
+        selected_widths_index = false;
+        paused = true;
+        transactions_paused = JSON.parse(JSON.stringify(transactions));
+    }        
+
+    var handle_play = function(){
+        paused = false;
+    }
+
+    var pause_button = new Button({
+        id : 'pause',
+        on_text : 'Pause',
+        on_callback : 'handle_play',
+        off_text : 'Start',
+        off_callback : 'handle_pause',
+        state : 'on'
+    });
+
+    var menu = $('<div id="menu"></div>')
+        .append(sound_button.elm)
+        .append(pause_button.elm);
+
+    var canvas = $('<canvas id="graph" width="'+window_width+'" height="'+window_height+'" title="Click to Pause"></canvas>');
+
     var incoming = $('<div id="incoming"></div>');
+
     $('body')
         .append(title)
         .append(menu)
         .append(incoming)
         .append(canvas);
-    var calculate_transactions_length = function(){
-        window_width = $(window).width();
-        window_height = $(window).height();
-        transactions_length = Math.round(window_width/2);
-        while ( transactions.length < transactions_length ) {
-            transactions.splice(0, 0, false);
-        }
-        while ( transactions.length > transactions_length ) {
-            transactions.shift()
-        }
-        // calculate the x position and width for each bar
-        var end_width = 17;
-        var start_width = 0.0000004;
-        var start_scale = 0.000001;
-        var scale_ratio = Math.pow( end_width / start_width , 1 / transactions_length );
-        widths = [{x:0,w:start_width,s:start_scale}];
-        for ( var i=1; i<transactions_length; i++ ){
-            var w = widths[i-1]['w'] * scale_ratio;
-            var s = widths[i-1]['s'] * scale_ratio;
-            widths.push( { x: widths[i-1]['x']+w, w: w, s: s} );
-        }
-    }
 
-    // only calculate when resized
-    calculate_transactions_length();
-    $(window).resize(function(){
-        calculate_transactions_length();
-    });
-
-    // initialize ui actions 
-    var handle_pause = function(t){
-        hovered_widths_index = false;
-        selected_widths_index = false;
-        var t = $('#pause');
-        if ( t.hasClass('on') ){
-            t.removeClass('on').text('Pause');
-            paused = false;
-        } else {
-            t.addClass('on').text('Start');
-            paused = true;
-            // clone the transactions
-            transactions_paused = JSON.parse(JSON.stringify(transactions));
-        }
-    }
-    pause_button.click(function(){
-        handle_pause(this);
-    });
     canvas.click(function(e){
         if ( paused && hovered_widths_index ) {
             selected_widths_index = hovered_widths_index;
-            var tx = transactions_paused[hovered_widths_index]
-            // render graph
-            render( transactions_paused, tx, canvas[0] );
+            render( transactions_paused, transactions_paused[hovered_widths_index], canvas[0] );
         } else {
-            handle_pause();
+            pause_button.elm.trigger('click');
         }
     })
-    sound_button.click(function(){
-        var t = $(this);
-        if ( t.hasClass('on') ){
-            t.removeClass('on').text('Sound is Off');
-            synth.stop();
-        } else {
-            t.addClass('on').text('Sound is On');
-            synth.start();
-        }
-    });
+
     canvas.mousemove(function(e){
         if ( paused ) {
             var t = $(this), x = e.pageX, y = e.pageY;
@@ -162,11 +192,11 @@ var BitflowUI = function(config){
     })        
 
     // define function to render the graph
-
     var render = function( txs, tx, canvas ){
 
         canvas.width = window_width;
         canvas.height = window_height;
+
         if ( canvas.getContext ){
             var ctx = canvas.getContext('2d');
             for (var k=0,txs_length=txs.length; k<txs_length; k++){
