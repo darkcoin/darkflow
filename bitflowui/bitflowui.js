@@ -3,40 +3,32 @@ var BitflowUI = function(config){
     // init variables 
 
     var socket;
-    var max_transactions;
+    var transactions_length;
     var transactions = [];
-    var pause = false;
+    var paused = false;
     var transactions_paused = null;
     var audio = false;
     var osc = false;
-    var max_height = 10;
-    var max_height_divisor = 10;
     var widths = null;
     var hovered_widths_index = false;
     var selected_widths_index = false;
 
+    var handle_transaction = function(tx){
+        transactions.push( tx );
+        if ( !paused ) {
+            render( transactions, tx );
+        }
+    }
 
     // initialize socket        
-
     socket = io.connect( config['socket'] );
-
-    socket.on('tx', function (data) {
-
-        transactions.push(data);
-
-        if ( !pause ) {
-            render( transactions );
-            handle_transaction( data );
-        }
-
-    });
-
+    socket.on('tx', handle_transaction );
 
     // initialize html 
 
     var title = $('<div id="title" >Bitcoin Live Transactions</div>');         
 
-    var sound_button = $('<span id="sound"></span>');
+    var sound_button = $('<span id="sound">Sound is Off</span>');
     var pause_button = $('<span id="pause">Pause</span>');
         
     var menu = $('<div id="menu"></div>');
@@ -52,7 +44,30 @@ var BitflowUI = function(config){
         
         
     // initialize actions 
+
+    var handle_pause = function(t){
+
+        hovered_widths_index = false;
+        selected_widths_index = false;
+
+        var t = $('#pause');
         
+        if ( t.hasClass('on') ){
+
+            t.removeClass('on');
+            t.text('Pause');
+            paused = false;
+
+        } else {
+
+            t.addClass('on');
+            t.text('Start');
+            paused = true;
+
+            transactions_paused = JSON.parse(JSON.stringify(transactions));
+        }
+    }
+
     pause_button.click(function(){
         handle_pause(this);
     });
@@ -87,15 +102,12 @@ var BitflowUI = function(config){
 
     canvas.click(function(e){
 
-        if ( pause && hovered_widths_index ) {
+        if ( paused && hovered_widths_index ) {
             selected_widths_index = hovered_widths_index;
             var tx = transactions_paused[hovered_widths_index]
 
-            // display info
-            handle_transaction( tx );
-
             // render graph
-            render( transactions_paused );
+            render( transactions_paused, tx );
 
         } else {
             handle_pause();
@@ -104,13 +116,14 @@ var BitflowUI = function(config){
 
     canvas.mousemove(function(e){
 
-        var t = $(this);
+        if ( paused ) {
 
-        if ( pause ) {
+            var t = $(this);
 
             var x = e.pageX, y = e.pageY;
-            for ( var ii= 0, ll=widths.length-1; ii<ll; i++ ) {
-                //todo: select last element                    
+
+            // check all widths(bars), except the last
+            for ( var ii=0, ll=widths.length-1; ii<ll; ii++) {
                 if ( x > widths[ii]['x'] && x < widths[ii+1]['x'] ) {
                     t.css('cursor', 'pointer').attr('title', '');
                     hovered_widths_index = ii;
@@ -118,10 +131,17 @@ var BitflowUI = function(config){
                 } else {
                     t.css('cursor', 'default');
                 }
-                ii++;
             }
 
-            render( transactions_paused );
+            // check the last widths(bar)
+            var li = widths.length-1;
+            if ( x > widths[li]['x'] && x < widths[li]['x'] + widths[li]['w']) {
+                t.css('cursor', 'pointer').attr('title', '');
+                hovered_widths_index = widths.length-1;
+            } 
+
+            render( transactions_paused, false );
+
         }
 
     })        
@@ -129,20 +149,20 @@ var BitflowUI = function(config){
 
     // initialize functions
     
-    var calculate_max_transactions = function(){
-        max_transactions = Math.round($(window).width()/2);
-        if ( transactions.length < max_transactions ) {
-            while ( transactions.length < max_transactions ) {
+    var calculate_transactions_length = function(){
+        transactions_length = Math.round($(window).width()/2);
+        if ( transactions.length < transactions_length ) {
+            while ( transactions.length < transactions_length ) {
                 transactions.splice(0, 0, false);
             }
-        } else if ( transactions.length > max_transactions ) {
-            while ( transactions.length > max_transactions ) {
+        } else if ( transactions.length > transactions_length ) {
+            while ( transactions.length > transactions_length ) {
                 transactions.shift()
             }
         }
     }
 
-    var handle_transaction = function(tx){
+    var render_transaction_info = function(tx){
 
         var output_html = '<div>';
         var il = tx['outputs'].length;
@@ -173,36 +193,22 @@ var BitflowUI = function(config){
 
     }
 
-    var handle_pause = function(t){
-        hovered_widths_index = false;
-        selected_widths_index = false;
-        var t = $('#pause');
-        if ( t.hasClass('on') ){
-            t.removeClass('on');
-            t.text('Pause');
-            pause = false;
-        } else {
+    var render = function( txs, tx ){
 
-            t.addClass('on');
-            t.text('Start');
-            pause = true;
+        calculate_transactions_length();
 
-            transactions_paused = JSON.parse(JSON.stringify(transactions));
+        if ( tx ) {
+            render_transaction_info( tx );
         }
-    }
-
-    var render = function( data ){
-
-        calculate_max_transactions();
 
         var end_width = 17;
         var start_width = 0.0000004;
         var start_scale = 0.000001;
-        var scale_ratio = Math.pow( end_width / start_width , 1 / max_transactions );
+        var scale_ratio = Math.pow( end_width / start_width , 1 / transactions_length );
 
         widths = [{x:0,w:start_width,s:start_scale}];
 
-        for ( var i=1; i<max_transactions; i++ ){
+        for ( var i=1; i<transactions_length; i++ ){
             var w = widths[i-1]['w'] * scale_ratio;
             var s = widths[i-1]['s'] * scale_ratio;
             widths.push( { x: widths[i-1]['x']+w, w: w, s: s} );
@@ -216,14 +222,13 @@ var BitflowUI = function(config){
             var ctx = canvas.getContext('2d');
 
             var c = 0;
-            var il = data.length;
-            var local_max_height = 0;
+            var il = txs.length;
             for (var k=0; k<il; k++){
                 var total = 0;
-                if ( data[k] ) {
-                    var jl = data[k]['outputs'].length;
+                if ( txs[k] ) {
+                    var jl = txs[k]['outputs'].length;
                     for ( var j=0; j<jl; j++){
-                        var value = data[k]['outputs'][j]['value'];
+                        var value = txs[k]['outputs'][j]['value'];
                         total += parseFloat(value);
                     }
 
@@ -235,31 +240,23 @@ var BitflowUI = function(config){
 
                     var y = ($(window).height()/2)-(height/2);
 
-                    if ( height/$(window).height() > max_height_divisor ) {
-                        max_height_divisor = height/$(window).height();
-                    }
-
-                    if ( height > local_max_height ) {
-                        local_max_height = height;
-                    }
-
                     if ( audio && osc ) {
                         osc.type = "square";
-                        var frequency = height/(max_height*0.5) * 1000 + 10;
+                        var frequency = total * 1000 + 10;
                         osc.frequency.value = frequency;
                     }
-                    if ( pause && hovered_widths_index == c ) {
+                    if ( paused && hovered_widths_index == c ) {
                         ctx.fillStyle = 'rgba(0, 121, 255, 1)';
-                    } else if ( pause && selected_widths_index == c ) {
+                    } else if ( paused && selected_widths_index == c ) {
                         ctx.fillStyle = 'rgba(0, 0, 0, 1)';
                     } else {
                         ctx.fillStyle = 'rgba(255, 134, 0, 1)';
                     }
         
-                    var jl = data[k]['outputs'].length;
+                    var jl = txs[k]['outputs'].length;
                     var bar_height, percentage, value;
                     for ( var j=0; j<jl; j++){
-                        value = parseFloat( data[k]['outputs'][j]['value'] );
+                        value = parseFloat( txs[k]['outputs'][j]['value'] );
                         percentage = value / total;
                         bar_height = height * percentage;
                         ctx.fillRect(x, y - 3, width, bar_height - 3);
@@ -270,8 +267,6 @@ var BitflowUI = function(config){
                 }
                 c++;
             }
-        
-            max_height = local_max_height;
         
         }
     }

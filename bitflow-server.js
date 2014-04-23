@@ -15,6 +15,8 @@ exports.BitflowServer = function(config) {
     // init variables
 
     var known_tx_hashes = {},
+    known_tx_hashes_max_length = 5000,
+    known_tx_hashes_length = 0,
     network = null,
     app = null,
     io = null,
@@ -97,9 +99,14 @@ exports.BitflowServer = function(config) {
 
         if ( known_tx_hashes[hash] == undefined ) {
 
-            //todo: flush very old hashes
-
+            // do not use too much memory
+            if ( known_tx_hashes_length >= known_tx_hashes_max_length ) {
+                known_tx_hashes = {};
+                known_tx_hashes_length = 0;
+            } 
+            
             known_tx_hashes[hash] = true;
+            known_tx_hashes_length++;
 
             for ( var i = 0; i < websockets.length; i++ ) {
                 websockets[i].emit('tx', { hash: hash, outputs: outputs });
