@@ -50,6 +50,8 @@ var BitflowUI = function(config){
     // define function to render the graph
     var render = function(){
 
+        console.log('render');
+
         if ( transactions_paused ) {
             txs = transactions_paused;
         } else {
@@ -265,9 +267,11 @@ var BitflowUI = function(config){
             for ( var ii=0, ll=widths.length-1; ii<ll; ii++) {
                 if ( x > widths[ii]['x'] && x < widths[ii+1]['x'] ) {
                     t.css('cursor', 'pointer').attr('title', '');
-                    hovered_widths_index = ii;
-                    // render graph
-                    render();
+                    if ( hovered_widths_index != ii ) {
+                        hovered_widths_index = ii;
+                        // render graph
+                        render();
+                    }
                     break;
                 } else {
                     t.css('cursor', 'default');
@@ -277,9 +281,11 @@ var BitflowUI = function(config){
             var li = widths.length-1;
             if ( x > widths[li]['x'] && x < widths[li]['x'] + widths[li]['w']) {
                 t.css('cursor', 'pointer').attr('title', '');
-                hovered_widths_index = widths.length-1;
-                // render graph
-                render();
+                if ( hovered_widths_index != widths.length-1 ) {
+                    hovered_widths_index = widths.length-1;
+                    // render graph
+                    render();
+                }
             } 
         }
     })        
