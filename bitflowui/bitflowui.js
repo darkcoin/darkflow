@@ -2,60 +2,24 @@ var BitflowUI = function(config){
 
     // init variables 
     var socket,
+        synth,
         transactions_length, //calculated length of transactions to render
         transactions = [],//transaction data from socket
-        transactions_paused = null,//clone of transactions to be used when paused
-        paused = false, //boolean if transactions paused
+        transaction = false, //current transaction
+        transactions_paused = false,//clone of transactions to be used when paused
         widths = null, //calculated x position and width for each bar in to be graphed
         window_width, 
         window_height,
         hovered_widths_index = false, //currently hovered bar in graph
         selected_widths_index = false; //currently selected bar in graph
 
-    // initialize socket
-    var handle_transaction = function(tx){
-        transactions.push( tx );
-        while ( transactions.length > transactions_length ) {
-            transactions.shift()
-        }
-        if ( !paused ) {
-            render( transactions, tx, canvas[0] );
-        }
-    }
-    socket = io.connect( config['socket'] );
-    socket.on('tx', handle_transaction );
+    var canvas = $('<canvas id="graph" width="'+window_width+'" height="'+window_height+'" title="Click to Pause"></canvas>');
+    var incoming = $('<div id="incoming"></div>');
 
-    // determine graph bar positions and widths
-    var calculate_transactions_length = function(){
-        window_width = $(window).width();
-        window_height = $(window).height();
-        transactions_length = Math.round(window_width/2);
-        while ( transactions.length < transactions_length ) {
-            transactions.splice(0, 0, false);
-        }
-        while ( transactions.length > transactions_length ) {
-            transactions.shift()
-        }
-        // calculate the x position and width for each bar
-        var end_width = 17;
-        var start_width = 0.0000004;
-        var start_scale = 0.000001;
-        var scale_ratio = Math.pow( end_width / start_width , 1 / transactions_length );
-        widths = [{x:0,w:start_width,s:start_scale}];
-        for ( var i=1; i<transactions_length; i++ ){
-            var w = widths[i-1]['w'] * scale_ratio;
-            var s = widths[i-1]['s'] * scale_ratio;
-            widths.push( { x: widths[i-1]['x']+w, w: w, s: s} );
-        }
-    };
-    calculate_transactions_length();
-    $(window).bind('resize', calculate_transactions_length );
 
     // init synthesizer
-    var Synth = function(){}
-    Synth.prototype = {
-        audio : false,
-        osc : false,
+    function SynthAudio(){}
+    SynthAudio.prototype = {
         stop : function(){
             if ( this.osc ) {
                 this.osc.stop(0);
@@ -74,14 +38,141 @@ var BitflowUI = function(config){
             this.osc.connect(this.audio.destination);
             this.osc.start(0);
         },
-        change : function(frequency){
+        change : function(f){
             if ( this.osc ) {
                 this.osc.type = "square";
-                this.osc.frequency.value = frequency;
+                this.osc.frequency.value = f;
             }
         }
     }
-    var synth = new Synth();
+    synth = new SynthAudio();
+
+    // define function to render the graph
+    var render = function(){
+
+        if ( transactions_paused ) {
+            txs = transactions_paused;
+        } else {
+            txs = transactions;
+        }
+
+        canvas[0].width = window_width;
+        canvas[0].height = window_height;
+
+        if ( canvas[0].getContext ){
+            var ctx = canvas[0].getContext('2d');
+            for (var k=0,txs_length=txs.length; k<txs_length; k++){
+                var total = 0;
+                if ( txs[k] ) {
+
+                    // calculate values
+                    for ( var j=0,jl=txs[k]['outputs'].length; j<jl; j++){
+                        var value = txs[k]['outputs'][j]['value'];
+                        total += parseFloat(value);
+                    }
+                    var x = widths[k]['x'],
+                        width = widths[k]['w'],
+                        height = Math.round(total*widths[k]['s']),
+                        y = (window_height/2)-(height/2);
+
+                    // change audio    
+                    eval('synth.change')( total * 100 + 10 );
+
+                    // draw graph                        
+                    if ( transactions_paused && hovered_widths_index == k ) {
+                        ctx.fillStyle = 'rgba(0, 121, 255, 1)';
+                    } else if ( transactions_paused && selected_widths_index == k ) {
+                        ctx.fillStyle = 'rgba(0, 0, 0, 1)';
+                    } else {
+                        ctx.fillStyle = 'rgba(255, 134, 0, 1)';
+                    }
+                    var bar_height, percentage, value;
+                    for ( var j=0,jl=txs[k]['outputs'].length; j<jl; j++){
+                        bar_height = height * parseFloat( txs[k]['outputs'][j]['value'] ) / total;
+                        ctx.fillRect(x, y - 3, width, bar_height - 3);
+                        y += bar_height;
+                    }
+                }
+            }
+        }
+
+        if ( transaction ) {
+
+            var tx = transaction;
+
+            var html = '<div>';
+            var outs_length = tx['outputs'].length;
+            html += '<div class="transaction">';
+            html += '<div class="transaction-id-wrapper"><h3 class="transaction-output-header">Transaction ID</h3>';
+            html += '<div class="transaction-id"><a target="insight" href="http://live.insight.is/tx/'+tx['hash']+'">'+tx['hash']+'</a></div></div>';
+            html += '<div class="transaction-outputs-wrapper"><h3 class="transaction-output-header">Outputs ('+outs_length+')</h3><div id="transaction-outputs-inner-wrapper">';
+            for ( var i=0; i<outs_length; i++){
+                var value = tx['outputs'][i]['value'];
+                var addresses = tx['outputs'][i]['addresses'];
+                html += '<div class="output"> &#10141; '+value;
+                for ( var ai=0,al=addresses.length; ai<al;ai++){
+                    html += '<div><a target="insight" href="http://live.insight.is/address/'+addresses[0]+'">'+addresses[ai]+'</a></div>';
+                }
+                html += '</div>';
+                if ( i > 4 ) {
+                    html += '<div id="view-more-seperator"><a target="insight" href="http://live.insight.is/tx/'+tx['hash']+'">+ More</a></div>';
+                    break;
+                }
+            }
+            html += '</div></div></div>';
+            $('#incoming')
+                .html( html )
+                .css('left', window_width / 2 )
+                .css('top', window_height / 2 - incoming.height() / 2) 
+
+        }
+    }
+
+    // initialize socket
+    var handle_transaction = function(tx){
+        transactions.push( tx );
+        while ( transactions.length > transactions_length ) {
+            transactions.shift()
+        }
+        if ( !transactions_paused ) {
+            transaction = tx;
+            render();
+        }
+    }
+    socket = io.connect( config['socket'] );
+    socket.on('tx', handle_transaction );
+
+    // determine graph bar positions and widths
+    var calculate_transactions_length = function(){
+        if ( transactions_paused ) {
+            var txs = transactions_paused;
+        } else {
+            var txs = transactions;
+        }
+        window_width = $(window).width();
+        window_height = $(window).height();
+        transactions_length = Math.round(window_width/2);
+        while ( txs.length < transactions_length ) {
+            txs.splice(0, 0, false);
+        }
+        while ( txs.length > transactions_length ) {
+            txs.shift()
+        }
+        // calculate the x position and width for each bar
+        var end_width = 17;
+        var start_width = 0.0000004;
+        var start_scale = 0.000001;
+        var scale_ratio = Math.pow( end_width / start_width , 1 / transactions_length );
+        widths = [{x:0,w:start_width,s:start_scale}];
+        for ( var i=1; i<transactions_length; i++ ){
+            var w = widths[i-1]['w'] * scale_ratio;
+            var s = widths[i-1]['s'] * scale_ratio;
+            widths.push( { x: widths[i-1]['x']+w, w: w, s: s} );
+        }
+        render();
+    };
+    $(window).bind('resize', calculate_transactions_length );
+
 
     var Button = function(options){
         this.elm = $('<span id="'+options['id']+'"></span>');
@@ -123,14 +214,18 @@ var BitflowUI = function(config){
     });
 
     var handle_pause = function(){
+        if ( sound_button.elm.hasClass('on') ){
+            sound_button.elm.trigger('click');
+        }
         hovered_widths_index = false;
         selected_widths_index = false;
-        paused = true;
         transactions_paused = JSON.parse(JSON.stringify(transactions));
+        calculate_transactions_length();
     }        
 
     var handle_play = function(){
-        paused = false;
+        transactions_paused = false;
+        calculate_transactions_length();
     }
 
     var pause_button = new Button({
@@ -146,9 +241,6 @@ var BitflowUI = function(config){
         .append(sound_button.elm)
         .append(pause_button.elm);
 
-    var canvas = $('<canvas id="graph" width="'+window_width+'" height="'+window_height+'" title="Click to Pause"></canvas>');
-
-    var incoming = $('<div id="incoming"></div>');
 
     $('body')
         .append(title)
@@ -157,16 +249,17 @@ var BitflowUI = function(config){
         .append(canvas);
 
     canvas.click(function(e){
-        if ( paused && hovered_widths_index ) {
+        if ( transactions_paused && hovered_widths_index ) {
             selected_widths_index = hovered_widths_index;
-            render( transactions_paused, transactions_paused[hovered_widths_index], canvas[0] );
+            transaction = transactions_paused[hovered_widths_index];
+            render();
         } else {
             pause_button.elm.trigger('click');
         }
     })
 
     canvas.mousemove(function(e){
-        if ( paused ) {
+        if ( transactions_paused ) {
             var t = $(this), x = e.pageX, y = e.pageY;
             // check all bars except the last
             for ( var ii=0, ll=widths.length-1; ii<ll; ii++) {
@@ -174,7 +267,7 @@ var BitflowUI = function(config){
                     t.css('cursor', 'pointer').attr('title', '');
                     hovered_widths_index = ii;
                     // render graph
-                    render( transactions_paused, false, canvas[0] );
+                    render();
                     break;
                 } else {
                     t.css('cursor', 'default');
@@ -186,81 +279,10 @@ var BitflowUI = function(config){
                 t.css('cursor', 'pointer').attr('title', '');
                 hovered_widths_index = widths.length-1;
                 // render graph
-                render( transactions_paused, false, canvas[0] );
+                render();
             } 
         }
     })        
 
-    // define function to render the graph
-    var render = function( txs, tx, canvas ){
 
-        canvas.width = window_width;
-        canvas.height = window_height;
-
-        if ( canvas.getContext ){
-            var ctx = canvas.getContext('2d');
-            for (var k=0,txs_length=txs.length; k<txs_length; k++){
-                var total = 0;
-                if ( txs[k] ) {
-
-                    // calculate values
-                    for ( var j=0,jl=txs[k]['outputs'].length; j<jl; j++){
-                        var value = txs[k]['outputs'][j]['value'];
-                        total += parseFloat(value);
-                    }
-                    var x = widths[k]['x'],
-                        width = widths[k]['w'],
-                        height = Math.round(total*widths[k]['s']),
-                        y = (window_height/2)-(height/2);
-
-                    // change audio    
-                    synth.change( total * 1000 + 10 );
-
-                    // draw graph                        
-                    if ( paused && hovered_widths_index == k ) {
-                        ctx.fillStyle = 'rgba(0, 121, 255, 1)';
-                    } else if ( paused && selected_widths_index == k ) {
-                        ctx.fillStyle = 'rgba(0, 0, 0, 1)';
-                    } else {
-                        ctx.fillStyle = 'rgba(255, 134, 0, 1)';
-                    }
-                    var bar_height, percentage, value;
-                    for ( var j=0,jl=txs[k]['outputs'].length; j<jl; j++){
-                        bar_height = height * parseFloat( txs[k]['outputs'][j]['value'] ) / total;
-                        ctx.fillRect(x, y - 3, width, bar_height - 3);
-                        y += bar_height;
-                    }
-                }
-            }
-        }
-
-        if ( tx ) {
-
-            var html = '<div>';
-            var outs_length = tx['outputs'].length;
-            html += '<div class="transaction">';
-            html += '<div class="transaction-id-wrapper"><h3 class="transaction-output-header">Transaction ID</h3>';
-            html += '<div class="transaction-id"><a target="insight" href="http://live.insight.is/tx/'+tx['hash']+'">'+tx['hash']+'</a></div></div>';
-            html += '<div class="transaction-outputs-wrapper"><h3 class="transaction-output-header">Outputs ('+outs_length+')</h3><div id="transaction-outputs-inner-wrapper">';
-            for ( var i=0; i<outs_length; i++){
-                var value = tx['outputs'][i]['value'];
-                var addresses = tx['outputs'][i]['addresses'];
-                html += '<div class="output"> &#10141; '+value;
-                for ( var ai=0,al=addresses.length; ai<al;ai++){
-                    html += '<div><a target="insight" href="http://live.insight.is/address/'+addresses[0]+'">'+addresses[ai]+'</a></div>';
-                }
-                html += '</div>';
-                if ( i > 4 ) {
-                    html += '<div id="view-more-seperator"><a target="insight" href="http://live.insight.is/tx/'+tx['hash']+'">+ More</a></div>';
-                    break;
-                }
-            }
-            html += '</div></div></div>';
-            $('#incoming')
-                .html( html )
-                .css('left', window_width / 2 )
-                .css('top', window_height / 2 - incoming.height() / 2) 
-
-        }
-    }
 }
