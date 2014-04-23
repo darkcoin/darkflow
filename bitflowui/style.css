@@ -99,6 +99,11 @@ body {
 #sound.on { 
     background-position:0px -1px;
 }
+.publickeyaddress { 
+    background-image:url('publickey.png');
+    background-repeat:no-repeat;
+    padding-left:21px;
+}
 #sound {
     background-image:url('speaker.png');
     background-repeat:no-repeat;

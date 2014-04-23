@@ -112,7 +112,7 @@ var BitflowUI = function(config){
                 var addresses = tx['outputs'][i]['addresses'];
                 html += '<div class="output">'+value;
                 for ( var ai=0,al=addresses.length; ai<al;ai++){
-                    html += '<div>&#10141; <a title="View Address Details" target="insight" href="http://live.insight.is/address/'+addresses[0]+'">'+addresses[ai]+'</a></div>';
+                    html += '<div class="publickeyaddress"><a title="View Address Details" target="insight" href="http://live.insight.is/address/'+addresses[0]+'">'+addresses[ai]+'</a></div>';
                 }
                 html += '</div>';
                 if ( i > 4 ) {
