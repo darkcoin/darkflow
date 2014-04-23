@@ -3,6 +3,7 @@ body {
     font-family:'Open Sans Light', sans-serif;
     background-color:#eeffee;
     background-image:url('background.jpg');
+    background-size: 100% auto;
     margin:0;
     padding:0;
 }
@@ -82,7 +83,7 @@ body {
     z-index:10;
 }
 #menu span {
-    padding-left:20px;
+    margin-left:20px;
 }
 #menu {
     position:absolute;
@@ -95,20 +96,51 @@ body {
 #sound:hover { 
     color:#ff8600
 }
+#sound.on { 
+    background-position:0px -1px;
+}
 #sound {
+    background-image:url('speaker.png');
+    background-repeat:no-repeat;
+    padding-left:30px;
+    background-position:0px -27px;
     transition-timing-function: ease;
     transition-duration: 0.5s;
     transition-property: color;    
     cursor:pointer;
 }
+#pause.on { 
+    background-color:#ff8600;  
+    font-weight:800;
+    font-family:'Open Sans';
+}
+#pause.on:hover { 
+    background-color:#0079ff;  
+}
 #pause:hover { 
-    color:#ff8600
+    background-color:#ff8600;  
 }
 #pause {
+    background-color:#0079ff;  
+    color:#fff;
+    border-radius:5px;
+    padding:2px 7px;
     transition-timing-function: ease;
     transition-duration: 0.5s;
-    transition-property: color;
+    transition-property: background-color;
     cursor:pointer;
+}
+#footer a { 
+    text-decoration:none;
+    color:#ff8600;
+}
+#footer { 
+    position:absolute;
+    z-index:12;
+    bottom:0;
+    padding:10px 20px;
+    left:0;
+    font-size:12px;
 }
 #title {
     background-image:url('bitcoin_logo.png');

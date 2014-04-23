@@ -11,7 +11,8 @@ var BitflowUI = function(config){
         window_width, 
         window_height,
         hovered_widths_index = false, //currently hovered bar in graph
-        selected_widths_index = false; //currently selected bar in graph
+        selected_widths_index = false, //currently selected bar in graph
+        version = '0.1';
 
     var canvas = $('<canvas id="graph" width="'+window_width+'" height="'+window_height+'" title="Click to Pause"></canvas>');
     var incoming = $('<div id="incoming"></div>');
@@ -49,8 +50,6 @@ var BitflowUI = function(config){
 
     // define function to render the graph
     var render = function(){
-
-        console.log('render');
 
         if ( transactions_paused ) {
             txs = transactions_paused;
@@ -106,18 +105,18 @@ var BitflowUI = function(config){
             var outs_length = tx['outputs'].length;
             html += '<div class="transaction">';
             html += '<div class="transaction-id-wrapper"><h3 class="transaction-output-header">Transaction ID</h3>';
-            html += '<div class="transaction-id"><a target="insight" href="http://live.insight.is/tx/'+tx['hash']+'">'+tx['hash']+'</a></div></div>';
-            html += '<div class="transaction-outputs-wrapper"><h3 class="transaction-output-header">Outputs ('+outs_length+')</h3><div id="transaction-outputs-inner-wrapper">';
+            html += '<div class="transaction-id"><a title="View Transactions Details" target="insight" href="http://live.insight.is/tx/'+tx['hash']+'">'+tx['hash']+'</a></div></div>';
+            html += '<div class="transaction-outputs-wrapper"><h3 class="transaction-output-header">BTC Outputs ('+outs_length+')</h3><div id="transaction-outputs-inner-wrapper">';
             for ( var i=0; i<outs_length; i++){
                 var value = tx['outputs'][i]['value'];
                 var addresses = tx['outputs'][i]['addresses'];
-                html += '<div class="output"> &#10141; '+value;
+                html += '<div class="output">'+value;
                 for ( var ai=0,al=addresses.length; ai<al;ai++){
-                    html += '<div><a target="insight" href="http://live.insight.is/address/'+addresses[0]+'">'+addresses[ai]+'</a></div>';
+                    html += '<div>&#10141; <a title="View Address Details" target="insight" href="http://live.insight.is/address/'+addresses[0]+'">'+addresses[ai]+'</a></div>';
                 }
                 html += '</div>';
                 if ( i > 4 ) {
-                    html += '<div id="view-more-seperator"><a target="insight" href="http://live.insight.is/tx/'+tx['hash']+'">+ More</a></div>';
+                    html += '<div id="view-more-seperator"><a title="View Transactions Details" target="insight" href="http://live.insight.is/tx/'+tx['hash']+'">+ More</a></div>';
                     break;
                 }
             }
@@ -183,10 +182,12 @@ var BitflowUI = function(config){
             var options = JSON.parse(elm.attr('data-options'));
             if ( state == 'on' ){
                 elm.addClass('on');
+                elm.attr('title', options['on_title']);
                 elm.text( options['on_text'] );
                 eval(options['on_callback'])();
             } else {
                 elm.removeClass('on');
+                elm.attr('title', options['off_title']);
                 elm.text( options['off_text'] );
                 eval(options['off_callback'])();
             }
@@ -204,13 +205,16 @@ var BitflowUI = function(config){
     }
 
     // initialize html 
-    var title = $('<div id="title" >Bitcoin Live Transactions</div>');         
+    var title = $('<div id="title">Bitcoin Transactions</div>');
+    var footer = $('<div id="footer"><a title="Bitflow Source Code" href="https://gitorious.org/bitflow">Bitflow</a> v'+version+' powered by <a title="Bitcore Project Website" href="http://bitcore.io">Bitcore</a> and <a title="Node.js Project Website" href="http://nodejs.org/">Node.js</a></div>');
 
     var sound_button = new Button({
         id : 'sound',
         on_text : 'Sound is On',
+        on_title : 'Turn Sound Off',
         on_callback : 'synth.start',
         off_text : 'Sound is Off',
+        off_title : 'Turn Sound On',
         off_callback : 'synth.stop',
         state : 'off'
     });
@@ -232,9 +236,11 @@ var BitflowUI = function(config){
 
     var pause_button = new Button({
         id : 'pause',
-        on_text : 'Pause',
+        on_text : 'Live',
+        on_title : 'Pause',
         on_callback : 'handle_play',
-        off_text : 'Start',
+        off_text : 'Paused',
+        off_title : 'Resume',
         off_callback : 'handle_pause',
         state : 'on'
     });
@@ -246,6 +252,7 @@ var BitflowUI = function(config){
 
     $('body')
         .append(title)
+        .append(footer)
         .append(menu)
         .append(incoming)
         .append(canvas);
