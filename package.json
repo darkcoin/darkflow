@@ -1,6 +1,6 @@
 {
     "name" : "bitflow",
-    "description" : "Live Bitcoin transactions generative art that connects to Bitcoin peers to recieve incoming transactions to generate interative visual and audio artwork based on the values of BTC outputs.",
+    "description" : "Live Bitcoin transactions generative art that connects to Bitcoin peers to receive incoming transactions to generate interactive visual and audio artwork based on the values of BTC outputs.",
     "homepage" : "https://gitorious.org/bitflow/",
     "keywords" : ["bitcoin", "btc", "server", "money", "currency", "satoshi", "visualization", "generative", "art", "canvas"],
     "author" : {
@@ -13,7 +13,7 @@
         "socket.io": "0.9.16",
         "express": "4.0.0"
     },
-    "repository" : {"type": "git", "url": "git://gitorious.org/bitflow/bitflow.git"},
+    "repository" : {"type": "git", "url": "git@gitorious.org:bitflow/bitflow.git"},
     "main" : "bitflow-server.js",
     "version" : "0.1.0",
     "license": "MIT",
