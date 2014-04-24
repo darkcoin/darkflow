@@ -115,7 +115,14 @@ exports.BitflowServer = function(config) {
     // initialize
 
     web = express();
-    web.use(express.static(__dirname + '/bitflowui'));
+    web.set('views', __dirname + '/bitflowui');
+    web.set('view engine', 'ejs');
+    web.get('/', function(req, res, next){
+        res.render('index.ejs', { config: config }, function(err, html){
+            res.send(html);
+        });
+    });
+    web.use('/static', express.static(__dirname + '/bitflowui'));
     app = http.createServer(web);
     io = socket.listen(app, {log: config['debug']} );
     app.listen( config['port'] );
