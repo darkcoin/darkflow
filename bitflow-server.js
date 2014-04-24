@@ -1,5 +1,5 @@
 var fs = require('fs');
-var fileserver = require('node-static');
+var express = require('express');
 var bitcore = require('bitcore');
 var Address = bitcore.Address;
 var util = bitcore.util;
@@ -18,6 +18,7 @@ exports.BitflowServer = function(config) {
     known_tx_hashes_max_length = 5000,
     known_tx_hashes_length = 0,
     network = null,
+    web = null,
     app = null,
     io = null,
     peermanager = null,
@@ -37,18 +38,6 @@ exports.BitflowServer = function(config) {
     var handle_peer_connection = function(conn){
         conn.on('inv', handle_inv);
         conn.on('tx', handle_tx);
-    }
-
-    var handle_index = function(request, response) {
-        server.serve(request, response, function (err, res) {
-            if (err) { // An error as occured
-                console.error("> Error serving " + request.url + " - " + err.message);
-                response.writeHead(err.status, err.headers);
-                response.end();
-            } else { // The file was served successfully
-                console.log("> " + request.url + " - " + res.message);
-            }
-        })
     }
 
     var handle_tx = function(info) {
@@ -125,9 +114,10 @@ exports.BitflowServer = function(config) {
 
     // initialize
 
-    server = new fileserver.Server(  __dirname + '/bitflowui/' );
-    app = http.createServer(handle_index)
-    io = socket.listen(app, {log: config['debug']} )
+    web = express();
+    web.use(express.static(__dirname + '/bitflowui'));
+    app = http.createServer(web);
+    io = socket.listen(app, {log: config['debug']} );
     app.listen( config['port'] );
 
     if ( config['network'] == 'livenet' ) {

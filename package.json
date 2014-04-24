@@ -1,0 +1,23 @@
+{
+    "name" : "bitflow",
+    "description" : "Live Bitcoin transactions generative art that connects to Bitcoin peers to recieve incoming transactions to generate interative visual and audio artwork based on the values of BTC outputs.",
+    "homepage" : "https://gitorious.org/bitflow/",
+    "keywords" : ["bitcoin", "btc", "server", "money", "currency", "satoshi", "visualization", "generative", "art", "canvas"],
+    "author" : {
+        "name": "Braydon Fuller",
+        "email": "courier@braydon.com"
+    },
+    "contributors" : [],
+    "dependencies" : {
+        "bitcore": "0.1.12",
+        "socket.io": "0.9.16",
+        "express": "4.0.0"
+    },
+    "repository" : {"type": "git", "url": "git://gitorious.org/bitflow/bitflow.git"},
+    "main" : "bitflow-server.js",
+    "version" : "0.1.0",
+    "license": "MIT",
+    "engines": {
+        "node": ">=0.10"
+    }
+}
