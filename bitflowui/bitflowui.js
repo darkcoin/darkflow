@@ -12,7 +12,7 @@ var BitflowUI = function(config){
         window_height,
         hovered_widths_index = false, //currently hovered bar in graph
         selected_widths_index = false, //currently selected bar in graph
-        version = '0.1.2';
+        version = '0.1.5';
 
     var canvas = $('<canvas id="graph" width="'+window_width+'" height="'+window_height+'" title="Click to Pause"></canvas>');
     var incoming = $('<div id="incoming"></div>');
@@ -206,7 +206,7 @@ var BitflowUI = function(config){
 
     // initialize html 
     var title = $('<div id="title">Bitcoin Transactions</div>');
-    var footer = $('<div id="footer"><a title="Bitflow Source Code" href="https://gitorious.org/bitflow">Bitflow</a> v'+version+' powered by <a title="Bitcore Project Website" href="http://bitcore.io">Bitcore</a> and <a title="Node.js Project Website" href="http://nodejs.org/">Node.js</a></div>');
+    var footer = $('<div id="footer"><a title="Bitflow Source Code" href="https://www.npmjs.org/package/bitflow">Bitflow</a> v'+version+' powered by <a title="Bitcore Project Website" href="http://bitcore.io">Bitcore</a> and <a title="Node.js Project Website" href="http://nodejs.org/">Node.js</a></div>');
 
     var sound_button = new Button({
         id : 'sound',
