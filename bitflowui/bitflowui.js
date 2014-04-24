@@ -12,7 +12,7 @@ var BitflowUI = function(config){
         window_height,
         hovered_widths_index = false, //currently hovered bar in graph
         selected_widths_index = false, //currently selected bar in graph
-        version = '0.1';
+        version = '0.1.2';
 
     var canvas = $('<canvas id="graph" width="'+window_width+'" height="'+window_height+'" title="Click to Pause"></canvas>');
     var incoming = $('<div id="incoming"></div>');

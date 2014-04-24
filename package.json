@@ -11,11 +11,14 @@
     "dependencies" : {
         "bitcore": "0.1.13",
         "socket.io": "0.9.16",
-        "express": "4.0.0"
+        "express": "4.0.0",
+        "ejs": "1.0.0"
     },
     "repository" : {"type": "git", "url": "git@gitorious.org:bitflow/bitflow.git"},
     "main" : "bitflow-server.js",
-    "version" : "0.1.0",
+    "scripts" : { "start" : "bitflow.js" },
+    "subdomain" : "bitflow",
+    "version" : "0.1.2",
     "license": "MIT",
     "engines": {
         "node": ">=0.10"
