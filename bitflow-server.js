@@ -22,6 +22,8 @@ exports.BitflowServer = function(config) {
         config['debug'] = false;
     if ( config['network'] == undefined ) 
         config['network'] = 'livenet';
+    if ( config['max_peers'] == undefined ) 
+        config['max_peers'] = 6;
 
 
     // init variables
@@ -154,25 +156,7 @@ exports.BitflowServer = function(config) {
     io.sockets.on('connection', handle_socket_connection );
     peermanager = new bitcore.PeerManager( { network: network } );
     peermanager.on('connection', handle_peer_connection );
-
-    if ( peermanager.discover != undefined ) {
-
-        // only available in versions > 0.1.12
-        peermanager.discover({ limit: 12 }).start();
-
-    } else {
-    
-        //bitseed.xf2.org
-        //bitseed.bitcoin.org.uk
-        //dnsseed.bluematt.me
-        
-        dns.resolve4('dnsseed.bluematt.me', function(err, addresses){
-            addresses.forEach(function(address){
-                peermanager.addPeer(new Peer(address, 8333));
-            })    
-        });    
-    
-        peermanager.start();
-    }
+    peermanager.discover({ limit: config['max_peers'] });
+    peermanager.start();
 
 }

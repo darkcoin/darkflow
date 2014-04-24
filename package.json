@@ -9,7 +9,7 @@
     },
     "contributors" : [],
     "dependencies" : {
-        "bitcore": "0.1.12",
+        "bitcore": "0.1.13",
         "socket.io": "0.9.16",
         "express": "4.0.0"
     },
