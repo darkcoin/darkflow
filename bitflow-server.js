@@ -12,9 +12,21 @@ var Peer = bitcore.Peer;
 
 exports.BitflowServer = function(config) {
 
-    // init variables
+    // defaults
 
-    var known_tx_hashes = {},
+    if ( config['host'] == undefined )
+        config['host'] = 'http://127.0.0.1';
+    if ( config['port'] == undefined )
+        config['port'] = '80';
+    if ( config['debug'] == undefined )
+        config['debug'] = false;
+    if ( config['network'] == undefined ) 
+        config['network'] = 'livenet';
+
+
+    // init variables
+    var site_url,
+    known_tx_hashes = {},
     known_tx_hashes_max_length = 5000,
     known_tx_hashes_length = 0,
     network = null,
@@ -24,6 +36,12 @@ exports.BitflowServer = function(config) {
     peermanager = null,
     server = null,
     websockets = [];
+
+    if ( config['port'].toString() != '80' ) {
+        site_url = config['host']+':'+config['port'];
+    } else {
+        site_url = config['host'];
+    }
 
     // define functions
 
@@ -118,7 +136,7 @@ exports.BitflowServer = function(config) {
     web.set('views', __dirname + '/bitflowui');
     web.set('view engine', 'ejs');
     web.get('/', function(req, res, next){
-        res.render('index.ejs', { config: config }, function(err, html){
+        res.render('index.ejs', { site_url: site_url }, function(err, html){
             res.send(html);
         });
     });
