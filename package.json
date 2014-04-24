@@ -1,6 +1,6 @@
 {
     "name" : "bitflow",
-    "description" : "Live Bitcoin transactions generative art that connects to Bitcoin peers to receive incoming transactions to generate interactive visual and audio artwork based on the values of BTC outputs.",
+    "description" : "Generative art of live Bitcoin transactions. It connects to Bitcoin peers to receive incoming transactions to generate interactive visual and audio artwork based on the values of BTC outputs.",
     "homepage" : "https://gitorious.org/bitflow/",
     "keywords" : ["bitcoin", "btc", "server", "money", "currency", "satoshi", "visualization", "generative", "art", "canvas"],
     "author" : {
