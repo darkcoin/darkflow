@@ -51,7 +51,7 @@ body {
 .output { 
     margin-bottom:10px;
 }
-#graph {
+svg#graph {
     left:0;
     top:0;
     position:absolute;

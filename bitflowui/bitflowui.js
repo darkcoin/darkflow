@@ -12,7 +12,7 @@ var BitflowUI = function(config){
         window_height = $(window).height(),
         selected_widths_index = false, //currently selected bar in graph
         svgns = "http://www.w3.org/2000/svg",
-        version = '0.1.5';
+        version = '0.1.6';
 
     var incoming = $('<div id="incoming"></div>');
 
@@ -286,10 +286,13 @@ var BitflowUI = function(config){
     var handle_svg_hover = function(e){
         var elm = e.target;
         elm.setAttributeNS(null, 'fill', '#0079ff');
+        elm.style.cursor = 'pointer';
+        elm.setAttributeNS(null, '', '#0079ff');
     }
 
     var handle_svg_hoverout = function(e){
         var elm = e.target;
+        elm.style.cursor = 'default';
         var color = e.target.getAttribute('data-color');
         elm.setAttributeNS(null, 'fill', color);
     }
