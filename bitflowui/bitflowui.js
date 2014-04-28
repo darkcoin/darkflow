@@ -8,15 +8,13 @@ var BitflowUI = function(config){
         transaction = false, //current transaction
         transactions_paused = false,//clone of transactions to be used when paused
         widths = null, //calculated x position and width for each bar in to be graphed
-        window_width, 
-        window_height,
-        hovered_widths_index = false, //currently hovered bar in graph
+        window_width = $(window).width(), 
+        window_height = $(window).height(),
         selected_widths_index = false, //currently selected bar in graph
+        svgns = "http://www.w3.org/2000/svg",
         version = '0.1.5';
 
-    var canvas = $('<canvas id="graph" width="'+window_width+'" height="'+window_height+'" title="Click to Pause"></canvas>');
     var incoming = $('<div id="incoming"></div>');
-
 
     // init synthesizer
     function SynthAudio(){}
@@ -57,45 +55,76 @@ var BitflowUI = function(config){
             txs = transactions;
         }
 
-        canvas[0].width = window_width;
-        canvas[0].height = window_height;
+        var svg = document.createElementNS(svgns,"svg");
+        svg.setAttributeNS(null,'id', 'graph');
+        svg.setAttributeNS(null,'width', window_width);
+        svg.setAttributeNS(null,'height', window_height);
 
-        if ( canvas[0].getContext ){
-            var ctx = canvas[0].getContext('2d');
-            for (var k=0,txs_length=txs.length; k<txs_length; k++){
-                var total = 0;
-                if ( txs[k] ) {
+        svg.width = window_width;
+        svg.height = window_height;
 
-                    // calculate values
-                    for ( var j=0,jl=txs[k]['outputs'].length; j<jl; j++){
-                        var value = txs[k]['outputs'][j]['value'];
-                        total += parseFloat(value);
-                    }
-                    var x = widths[k]['x'],
-                        width = widths[k]['w'],
-                        height = Math.round(total*widths[k]['s']),
-                        y = (window_height/2)-(height/2);
+        for (var k=0,txs_length=txs.length; k<txs_length; k++){
+            var total = 0;
+            if ( txs[k] ) {
 
-                    // change audio    
-                    eval('synth.change')( total * 100 + 10 );
-
-                    // draw graph                        
-                    if ( transactions_paused && hovered_widths_index == k ) {
-                        ctx.fillStyle = 'rgba(0, 121, 255, 1)';
-                    } else if ( transactions_paused && selected_widths_index == k ) {
-                        ctx.fillStyle = 'rgba(0, 0, 0, 1)';
-                    } else {
-                        ctx.fillStyle = 'rgba(255, 134, 0, 1)';
-                    }
-                    var bar_height, percentage, value;
-                    for ( var j=0,jl=txs[k]['outputs'].length; j<jl; j++){
-                        bar_height = height * parseFloat( txs[k]['outputs'][j]['value'] ) / total;
-                        ctx.fillRect(x, y - 3, width, bar_height - 3);
-                        y += bar_height;
-                    }
+                // calculate values
+                for ( var j=0,jl=txs[k]['outputs'].length; j<jl; j++){
+                    var value = txs[k]['outputs'][j]['value'];
+                    total += parseFloat(value);
                 }
+                var x = widths[k]['x'],
+                    width = widths[k]['w'],
+                    height = Math.round(total*widths[k]['s']),
+                    y = (window_height/2)-(height/2);
+
+                // change audio    
+                eval('synth.change')( total * 100 + 10 );
+
+                // draw graph
+                var style;
+                if ( transactions_paused && selected_widths_index == k ) {
+                    style = '#000';
+                } else {
+                    style = '#ff8600';
+                }
+
+                var bar_height;
+
+                var group = document.createElementNS(svgns,"g");
+                group.onclick = handle_svg_click;
+                group.onmouseover = handle_svg_hover;
+                group.onmouseout = handle_svg_hoverout;
+
+                for ( var j=0,jl=txs[k]['outputs'].length; j<jl; j++){
+
+                    bar_height = height * parseFloat( txs[k]['outputs'][j]['value'] ) / total;
+
+                    var rect = document.createElementNS(svgns,"rect");
+                    rect.setAttributeNS(null,'x',x);
+                    rect.setAttributeNS(null,'y',(y-3));
+                    rect.setAttributeNS(null, 'data-color', style );
+                    rect.setAttributeNS(null, 'data-tx', txs[k]['hash'] );
+                    rect.setAttributeNS(null, 'data-index', k );
+                    rect.setAttributeNS(null, 'data-output', j );
+                    rect.setAttributeNS(null, 'width', width);
+                    rect.setAttributeNS(null, 'height',(bar_height-3) > 0 ? (bar_height-3) : 1 );
+                    rect.setAttributeNS(null, 'fill', style);
+
+                    group.appendChild( rect );
+
+                    y += bar_height;
+                }
+
+                svg.appendChild( group );
+
             }
         }
+
+        var graph = document.getElementById('graph');
+        if ( graph ) {
+            graph.parentNode.removeChild(graph);
+        }
+        document.body.appendChild( svg );
 
         if ( transaction ) {
 
@@ -174,7 +203,6 @@ var BitflowUI = function(config){
     };
     $(window).bind('resize', calculate_transactions_length );
 
-
     var Button = function(options){
         this.elm = $('<span id="'+options['id']+'"></span>');
         this.elm.attr('data-options', JSON.stringify(options));
@@ -223,7 +251,6 @@ var BitflowUI = function(config){
         if ( sound_button.elm.hasClass('on') ){
             sound_button.elm.trigger('click');
         }
-        hovered_widths_index = false;
         selected_widths_index = false;
         transactions_paused = JSON.parse(JSON.stringify(transactions));
         calculate_transactions_length();
@@ -255,47 +282,26 @@ var BitflowUI = function(config){
         .append(footer)
         .append(menu)
         .append(incoming)
-        .append(canvas);
 
-    canvas.click(function(e){
-        if ( transactions_paused && hovered_widths_index ) {
-            selected_widths_index = hovered_widths_index;
-            transaction = transactions_paused[hovered_widths_index];
-            render();
-        } else {
+    var handle_svg_hover = function(e){
+        var elm = e.target;
+        elm.setAttributeNS(null, 'fill', '#0079ff');
+    }
+
+    var handle_svg_hoverout = function(e){
+        var elm = e.target;
+        var color = e.target.getAttribute('data-color');
+        elm.setAttributeNS(null, 'fill', color);
+    }
+
+    var handle_svg_click = function(e){
+        if ( !transactions_paused ) {
             pause_button.elm.trigger('click');
         }
-    })
-
-    canvas.mousemove(function(e){
-        if ( transactions_paused ) {
-            var t = $(this), x = e.pageX, y = e.pageY;
-            // check all bars except the last
-            for ( var ii=0, ll=widths.length-1; ii<ll; ii++) {
-                if ( x > widths[ii]['x'] && x < widths[ii+1]['x'] ) {
-                    t.css('cursor', 'pointer').attr('title', '');
-                    if ( hovered_widths_index != ii ) {
-                        hovered_widths_index = ii;
-                        // render graph
-                        render();
-                    }
-                    break;
-                } else {
-                    t.css('cursor', 'default');
-                }
-            }
-            // check the last bar
-            var li = widths.length-1;
-            if ( x > widths[li]['x'] && x < widths[li]['x'] + widths[li]['w']) {
-                t.css('cursor', 'pointer').attr('title', '');
-                if ( hovered_widths_index != widths.length-1 ) {
-                    hovered_widths_index = widths.length-1;
-                    // render graph
-                    render();
-                }
-            } 
-        }
-    })        
-
+        var elm = e.target;
+        selected_widths_index = elm.getAttribute('data-index');
+        transaction = transactions_paused[selected_widths_index];
+        render();
+    }
 
 }

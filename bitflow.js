@@ -2,7 +2,7 @@ var bitflow = require('./bitflow-server');
 
 var config = {
     host : 'http://127.0.0.1', // host for the web server
-    port : '80', // port for the web server
+    port : '8080', // port for the web server
     debug : false, // true or false
     network : 'livenet', // livenet or testnet
     max_peers : 6
