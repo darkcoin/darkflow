@@ -12,7 +12,7 @@ var BitflowUI = function(config){
         window_height = $(window).height(),
         selected_widths_index = false, //currently selected bar in graph
         svgns = "http://www.w3.org/2000/svg",
-        version = '0.1.6';
+        version = '0.1.7';
 
     var incoming = $('<div id="incoming"></div>');
 
