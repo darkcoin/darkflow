@@ -134,18 +134,18 @@ var BitflowUI = function(config){
             var outs_length = tx['outputs'].length;
             html += '<div class="transaction">';
             html += '<div class="transaction-id-wrapper"><h3 class="transaction-output-header">Transaction ID</h3>';
-            html += '<div class="transaction-id"><a title="View Transactions Details" target="insight" href="http://live.insight.is/tx/'+tx['hash']+'">'+tx['hash']+'</a></div></div>';
-            html += '<div class="transaction-outputs-wrapper"><h3 class="transaction-output-header">BTC Outputs ('+outs_length+')</h3><div id="transaction-outputs-inner-wrapper">';
+            html += '<div class="transaction-id"><a title="View Transactions Details" target="insight" href="http://explorer.darkcoin.io/tx/'+tx['hash']+'">'+tx['hash']+'</a></div></div>';
+            html += '<div class="transaction-outputs-wrapper"><h3 class="transaction-output-header">DRK Outputs ('+outs_length+')</h3><div id="transaction-outputs-inner-wrapper">';
             for ( var i=0; i<outs_length; i++){
                 var value = tx['outputs'][i]['value'];
                 var addresses = tx['outputs'][i]['addresses'];
                 html += '<div class="output">'+value;
                 for ( var ai=0,al=addresses.length; ai<al;ai++){
-                    html += '<div class="publickeyaddress"><a title="View Address Details" target="insight" href="http://live.insight.is/address/'+addresses[0]+'">'+addresses[ai]+'</a></div>';
+                    html += '<div class="publickeyaddress"><a title="View Address Details" target="insight" href="http://explorer.darkcoin.io/address/'+addresses[0]+'">'+addresses[ai]+'</a></div>';
                 }
                 html += '</div>';
                 if ( i > 4 ) {
-                    html += '<div id="view-more-seperator"><a title="View Transactions Details" target="insight" href="http://live.insight.is/tx/'+tx['hash']+'">+ More</a></div>';
+                    html += '<div id="view-more-seperator"><a title="View Transactions Details" target="insight" href="http://explorer.darkcoin.io/tx/'+tx['hash']+'">+ More</a></div>';
                     break;
                 }
             }
@@ -233,8 +233,8 @@ var BitflowUI = function(config){
     }
 
     // initialize html 
-    var title = $('<div id="title">Bitcoin Transactions</div>');
-    var footer = $('<div id="footer"><a title="Bitflow Source Code" href="https://www.npmjs.org/package/bitflow">Bitflow</a> v'+version+' powered by <a title="Bitcore Project Website" href="http://bitcore.io">Bitcore</a> and <a title="Node.js Project Website" href="http://nodejs.org/">Node.js</a></div>');
+    var title = $('<div id="title">Darkcoin Transactions</div>');
+    var footer = $('<div id="footer"><a title="Darkflow Source Code" href="https://github.com/darkcoin/darkflow">Darkflow</a> v'+version+' powered by <a title="Bitcore Project Website" href="http://bitcore.io">Bitcore</a> and <a title="Node.js Project Website" href="http://nodejs.org/">Node.js</a></div>');
 
     var sound_button = new Button({
         id : 'sound',

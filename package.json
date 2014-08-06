@@ -1,20 +1,25 @@
 {
-    "name" : "bitflow",
-    "description" : "Generative art of live Bitcoin transactions. It connects to Bitcoin peers to receive incoming transactions to generate interactive visual and audio artwork based on the values of BTC outputs.",
-    "homepage" : "https://gitorious.org/bitflow/",
-    "keywords" : ["bitcoin", "btc", "server", "money", "currency", "satoshi", "visualization", "generative", "art", "canvas"],
+    "name" : "darkflow",
+    "description" : "Generative art of realtime Darkcoin transactions. It connects to Darkcoin peers to receive incoming transactions to generate interactive visual and audio artwork based on the values of DRK outputs.",
+    "homepage" : "https://github.com/darkcoin/darkflow",
+    "keywords" : ["darkcoin", "drk", "server", "money", "currency", "satoshi", "visualization", "generative", "art", "canvas"],
     "author" : {
         "name": "Braydon Fuller",
         "email": "courier@braydon.com"
     },
-    "contributors" : [],
+    "contributors" : [
+      {
+        "name": "Holger Schinzel",
+        "email": "holger@darkcoin.qa"
+      }
+    ],
     "dependencies" : {
         "bitcore": "0.1.13",
         "socket.io": "0.9.16",
         "express": "4.0.0",
         "ejs": "1.0.0"
     },
-    "repository" : {"type": "git", "url": "git@gitorious.org:bitflow/bitflow.git"},
+    "repository" : {"type": "git", "url": "git@github.com:darkcoin/darkflow.git"},
     "main" : "bitflow-server.js",
     "scripts" : { "start" : "bitflow.js" },
     "subdomain" : "bitflow",

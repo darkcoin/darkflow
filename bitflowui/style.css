@@ -208,7 +208,7 @@ svg#graph {
     font-size:12px;
 }
 #title {
-    background-image:url('bitcoin_logo.png');
+    background-image:url('darkcoin_logo.png');
     background-repeat:no-repeat;
     background-position:15px 10px;
     position:absolute;

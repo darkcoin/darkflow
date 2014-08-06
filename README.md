@@ -1,17 +1,17 @@
-Bitflow
+Darkflow
 =======
 
-![Screenshot](https://gitorious.org/bitflow/bitflow/raw/bb209f1bf23a328754f321a00840d9750f062434:screenshot-1.png)
+![Screenshot](https://raw.githubusercontent.com/darkcoin/darkflow/master/screenshot-1.png)
 
 #Getting Started
 
-Bitflow runs on [Bitcore](http://bitcore.io/) and [Node.js](http://nodejs.org/), and can be installed via [npm](https://npmjs.org/):
+Darkflow runs on [Bitcore](http://bitcore.io/) and [Node.js](http://nodejs.org/), and can be installed via [npm](https://npmjs.org/):
 
 ```
-npm install bitflow
+npm install darkflow
 ```
 
-Here is an example.js file that will start the Bitflow server and will be accessible from a web browser at http://127.0.0.1:8080/ on a local machine:
+Here is an example.js file that will start the Darkflow server and will be accessible from a web browser at http://127.0.0.1:8080/ on a local machine:
 
 ```
 
